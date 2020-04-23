@@ -70,7 +70,7 @@ let shadowsocks_parser = {
     filter: /filter=([^&]+)/.test(hashtag) ? new RegExp('^'+decodeURIComponent(RegExp.$1)+'$') : undefined
   },
   
-    genConf: function (uri) {
+  genConf: function (uri) {
     if (uri === '\s' || uri === '') {
       return null;
     }
