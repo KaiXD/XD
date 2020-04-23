@@ -4,9 +4,6 @@
 
 "use strict";
 
-let hashtag = '123#tfo=1&udp=1';
-let content = 'c3M6Ly9ZV1Z6TFRFeU9DMWpabUk2TkRVd09RQHNoLWhrLnBjY3cuYmVzdDo4MDkwI1YzLUhLJTIwSVBMQzQlMjAlNUJTSEElNUQtR0FNSU5HT0stNXgKc3M6Ly9ZV1Z6TFRFeU9DMWpabUk2TkRVd09RQHN6LWhrLnBjY3cuYmVzdDo4MDkwI1YzLUhLJTIwSVBMQzYlMjAlNUJTWlglNUQtR0FNSU5HT0stNXgKc3M6Ly9ZV1Z6TFRFeU9DMWpabUk2TkRVd09RQGRsaW5lMy5zdGFycy5ydW46ODA5MCNWMy1KUCUyMElQTEMxJTIwJTVCU0hBJTVELUdBTUlOR09OTFktMTB4CnNzOi8vWVdWekxURXlPQzFqWm1JNk5EVXdPUUBzaC1rci5wY2N3LmJlc3Q6MTgwOTAjVjMtS1IlMjBJUExDMSUyMCU1QlBWRyU1RC1HQU1JTkdPTkxZLTEweA=='
-
 let shadowsocks_parser = {
   hashtag = $resource.link.split('#')[1]
   content = $resource.content
@@ -170,8 +167,9 @@ let shadowsocks_parser = {
       if (this.content.indexOf('ss://') === -1) this.content = base64_decode(this.content);
       this.content = this.content.split(/\s+/).map(this.genConf).filter(s => s).join('\n');
       this.content = {content: this.content};
+      return this.content
     } catch (err) {
-      console.log(err);
+      return {error: err};
     };
   }
 }
