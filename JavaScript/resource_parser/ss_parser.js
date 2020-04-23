@@ -70,100 +70,100 @@ let shadowsocks_parser = {
     filter: /filter=([^&]+)/.test(hashtag) ? new RegExp('^'+decodeURIComponent(RegExp.$1)+'$') : undefined
   },
   
-  genConf: function (uri) {
-  if (uri === '\s' || uri === '') {
-    return null;
-  }
-
-  ssp = shadowsocks_parser
-  
-  let node = {};
-  
-  if (ssp.re.uri.test(uri)) {
-    [node.user_info, node.host, node.port, node.plugin, node.tag] = [RegExp.$1, RegExp.$2, RegExp.$3, RegExp.$4, decodeURIComponent(RegExp.$5)];
-  } else {
-    console.log('uri not matched\n');
-    return null;
-  }
-  
-  if (ssp.re.filter && !ssp.re.filterRe.test(node.tag)) {
-    console.log(`Node ${node.tag} is abandoned by user-defined filter.\n`);
-    return null;
-  }
-
-  if (!ssp.re.host.test(node.host)) {
-    console.log(`node: ${node.tag}\nhost: ${node.host}\nhost error\n`);
-    return null;
-  }
-
-  if (!ssp.re.port.test(node.port)) {
-    console.log(`node: ${node.tag}\nport: ${node.port}\nport error\n`);
-    return null;
-  }
-  node.dec_user_info = base64_decode(node.user_info.replace('-', '+').replace('_', '/'));
-  if (ssp.re.user_info.test(node.dec_user_info)) {
-    [node.method, node.password] = [RegExp.$1, RegExp.$2];
-  } else {
-    console.log(`node: ${node.tag}\nuserinfo: ${node.user_info}\nuser information error\n`);
-    return null;
-  }
-
-  if (ssp.method.indexOf(node.method) === -1) {
-    console.log(`node: ${node.tag}\nmethod: ${node.method}\nmethod not supported\n`);
-    return null;
-  }
-
-  if (node.plugin && node.plugin in ssp.plugin) {
-    node.obfs = ssp.re.obfs.test(node.plugin) ? RegExp.$1 : undefined;
-    node.obfs_host = ssp.re.obfs_host.test(node.plugin) ? RegExp.$1 : undefined;
-    node.obfs_uri = ssp.re.obfs_uri.test(node.plugin) ? RegExp.$1 : undefined;
-  }
-
-  if (node.plugin && !node.obfs) {
-    node.plugin = undefined;
-    node.obfs = undefined;
-    node.obfs_host = undefined;
-    node.obfs_uri = undefined;
-    console.log(`node: ${node.tag}\nplugin: ${plugin}\nplugin cannot be identified by parser and plugin has been removed, which may cause node unavailable\n`);
-    //return null;
-  }
-
-  if (node.obfs && !ssp.plugin[node.plugin][node.obfs]) {
-    console.log(`node: ${node.tag}\nobfs: ${node.obfs}\nobfs mode error\n`);
-    return null;
-  }
-
-  if (node.obfs_host && !ssp.re.host.test(obfs_host)) {
-    node.plugin = undefined;
-    node.obfs = undefined;
-    node.obfs_host = undefined;
-    node.obfs_uri = undefined;
-    console.log(`node: ${node.tag}\nobfs-host: ${obfsHost}\nobfs-host error and plugin has been removed, which may cause node unavailable\n`);
-    //return null;
-  }
-
-  // 服务端 SS 有 obfs 有混淆参数，客户端更改混淆参数将导致节点不可用。
-  // 服务端 SS 有 obfs 无混淆参数，客户端混淆参数可以随意更改。
-  // 服务端 SSD 非 origin 协议 + 协议参数 + 有obfs，客户端混淆参数可以随意更改。
-  // 服务端 SSR 非 origin 协议 + 协议参数 + 有obfs，客户端混淆参数可以随意更改。
-  if (node.obfs && (!node.obfs_host || ssp.settings.force_http || ssp.settings.force_tls)) {
-    if (node.obfs === 'http') {
-        node.obfs_host = (ssp.settings.http_obfs_host && ssp.re.host.test(ssp.settings.http_obfs_host)) ? ssp.settings.http_obfs_host : node.obfs_host || ssp.settings.default_http_obfs_host;
+    genConf: function (uri) {
+    if (uri === '\s' || uri === '') {
+      return null;
     }
-    if (node.obfs === 'tls') {
-        ssp.settings.http_obfs_host = (ssp.settings.tls_obfs_host && ssp.re.host.test(ssp.settings.tls_obfs_host)) ? ssp.settings.tls_obfs_host : node.obfs_host || ssp.settings.default_tls_obfs_host;
-    }
-  }
 
-  if (node.obfs === 'http' && (!node.obfs_uri || ssp.settings.custom_obfs_uri)) {
-    if (ssp.settings.custom_obfs_uri) {
-        ssp.settings.custom_obfs_uri = (ssp.settings.custom_obfs_uri[0] === '/') ? ssp.settings.custom_obfs_uri : '/'+ssp.settings.custom_obfs_uri;
-    }
-    node.obfs_uri = ssp.settings.custom_obfs_uri || node.obfs_uri;
-  }
+    ssp = shadowsocks_parser
 
-  return `shadowsocks=${node.host}:${node.port}, method=${node.method}, password=${node.password}` + (node.obfs ? `, obfs=${node.obfs}` + (node.obfs_host ? `, obfs-host=${node.obfs_host}` + (node.obfs_uri ? `, obfs-uri=${node.obfs_uri}` : '') : '') : '') + `, fast-open=${ssp.settings.tfo}, udp-relay=${ssp.settings.udp}, tag=` + (node.tag || node.host);
-},
+    let node = {};
+
+    if (ssp.re.uri.test(uri)) {
+      [node.user_info, node.host, node.port, node.plugin, node.tag] = [RegExp.$1, RegExp.$2, RegExp.$3, RegExp.$4, decodeURIComponent(RegExp.$5)];
+    } else {
+      console.log('uri not matched\n');
+      return null;
+    }
+
+    if (ssp.re.filter && !ssp.re.filterRe.test(node.tag)) {
+      console.log(`Node ${node.tag} is abandoned by user-defined filter.\n`);
+      return null;
+    }
+
+    if (!ssp.re.host.test(node.host)) {
+      console.log(`node: ${node.tag}\nhost: ${node.host}\nhost error\n`);
+      return null;
+    }
+
+    if (!ssp.re.port.test(node.port)) {
+      console.log(`node: ${node.tag}\nport: ${node.port}\nport error\n`);
+      return null;
+    }
+    node.dec_user_info = base64_decode(node.user_info.replace('-', '+').replace('_', '/'));
+    if (ssp.re.user_info.test(node.dec_user_info)) {
+      [node.method, node.password] = [RegExp.$1, RegExp.$2];
+    } else {
+      console.log(`node: ${node.tag}\nuserinfo: ${node.user_info}\nuser information error\n`);
+      return null;
+    }
+
+    if (ssp.method.indexOf(node.method) === -1) {
+      console.log(`node: ${node.tag}\nmethod: ${node.method}\nmethod not supported\n`);
+      return null;
+    }
+
+    if (node.plugin && node.plugin in ssp.plugin) {
+      node.obfs = ssp.re.obfs.test(node.plugin) ? RegExp.$1 : undefined;
+      node.obfs_host = ssp.re.obfs_host.test(node.plugin) ? RegExp.$1 : undefined;
+      node.obfs_uri = ssp.re.obfs_uri.test(node.plugin) ? RegExp.$1 : undefined;
+    }
+
+    if (node.plugin && !node.obfs) {
+      node.plugin = undefined;
+      node.obfs = undefined;
+      node.obfs_host = undefined;
+      node.obfs_uri = undefined;
+      console.log(`node: ${node.tag}\nplugin: ${plugin}\nplugin cannot be identified by parser and plugin has been removed, which may cause node unavailable\n`);
+      //return null;
+    }
+
+    if (node.obfs && !ssp.plugin[node.plugin][node.obfs]) {
+      console.log(`node: ${node.tag}\nobfs: ${node.obfs}\nobfs mode error\n`);
+      return null;
+    }
+
+    if (node.obfs_host && !ssp.re.host.test(obfs_host)) {
+      node.plugin = undefined;
+      node.obfs = undefined;
+      node.obfs_host = undefined;
+      node.obfs_uri = undefined;
+      console.log(`node: ${node.tag}\nobfs-host: ${obfsHost}\nobfs-host error and plugin has been removed, which may cause node unavailable\n`);
+      //return null;
+    }
+
+    // 服务端 SS 有 obfs 有混淆参数，客户端更改混淆参数将导致节点不可用。
+    // 服务端 SS 有 obfs 无混淆参数，客户端混淆参数可以随意更改。
+    // 服务端 SSD 非 origin 协议 + 协议参数 + 有obfs，客户端混淆参数可以随意更改。
+    // 服务端 SSR 非 origin 协议 + 协议参数 + 有obfs，客户端混淆参数可以随意更改。
+    if (node.obfs && (!node.obfs_host || ssp.settings.force_http || ssp.settings.force_tls)) {
+      if (node.obfs === 'http') {
+          node.obfs_host = (ssp.settings.http_obfs_host && ssp.re.host.test(ssp.settings.http_obfs_host)) ? ssp.settings.http_obfs_host : node.obfs_host || ssp.settings.default_http_obfs_host;
+      }
+      if (node.obfs === 'tls') {
+          ssp.settings.http_obfs_host = (ssp.settings.tls_obfs_host && ssp.re.host.test(ssp.settings.tls_obfs_host)) ? ssp.settings.tls_obfs_host : node.obfs_host || ssp.settings.default_tls_obfs_host;
+      }
+    }
+
+    if (node.obfs === 'http' && (!node.obfs_uri || ssp.settings.custom_obfs_uri)) {
+      if (ssp.settings.custom_obfs_uri) {
+          ssp.settings.custom_obfs_uri = (ssp.settings.custom_obfs_uri[0] === '/') ? ssp.settings.custom_obfs_uri : '/'+ssp.settings.custom_obfs_uri;
+      }
+      node.obfs_uri = ssp.settings.custom_obfs_uri || node.obfs_uri;
+    }
+
+    return `shadowsocks=${node.host}:${node.port}, method=${node.method}, password=${node.password}` + (node.obfs ? `, obfs=${node.obfs}` + (node.obfs_host ? `, obfs-host=${node.obfs_host}` + (node.obfs_uri ? `, obfs-uri=${node.obfs_uri}` : '') : '') : '') + `, fast-open=${ssp.settings.tfo}, udp-relay=${ssp.settings.udp}, tag=` + (node.tag || node.host);
+  },
 
   genList: function () {
     try {
