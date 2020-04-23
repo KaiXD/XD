@@ -1,5 +1,5 @@
 /**
- * README: https://github.com/KaiXD/XD/blob/master/JavaScript/subs_convert/README.md
+ * README: https://github.com/KaiXD/XD/blob/master/JavaScript/resource_parser/README.md
  */
 
 "use strict";
