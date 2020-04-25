@@ -203,7 +203,7 @@ function shadowsocksr_parser(uri) {
   this.hashtag = $resource.link.split('#')[1];
   this.content = $resource.content;
 
-  this.setting = {
+  this.settings = {
     tfo: /tfo=(?:1|true|yes)/.test(this.hashtag) ? true : false,
     udp: /udp=(?:1|true|yes)/.test(this.hashtag) ? true : false,
     obfs_host: /obfs-host=([^&]+)/.test(this.hashtag) ? RegExp.$1 : undefined,
