@@ -203,9 +203,16 @@ function shadowsocksr_parser(uri) {
   this.hashtag = $resource.link.split('#')[1];
   this.content = $resource.content;
 
+  this.setting = {
+    tfo: /tfo=(?:1|true|yes)/.test(this.hashtag) ? true : false,
+    udp: /udp=(?:1|true|yes)/.test(this.hashtag) ? true : false,
+    obfs_host: /obfs-host=([^&]+)/.test(this.hashtag) ? RegExp.$1 : undefined,
+    filter: /filter=([^&]+)/.test(this.hashtag) ? new RegExp('^'+decodeURIComponent(RegExp.$1)+'$') : undefined
+  };
+  
   this.normal_b64 = function (str) {
     return str.replace('-', '+').replace('_', '/');
-  }
+  };
   
   this.genConf = function (uri) {
     try {
@@ -225,17 +232,17 @@ function shadowsocksr_parser(uri) {
     
         const params_arr = params_str.split('&');
         params_arr.forEach(params => {
-            if (params.indexOf('obfsparam') > -1) ssr.obfs_param = base64_decode(this.normal_b64(params.split('=')[1]));
+            if (params.indexOf('obfsparam') > -1) ssr.obfs_param = this.settings.obfs_host or base64_decode(this.normal_b64(params.split('=')[1]));
             if (params.indexOf('protoparam') > -1) ssr.proto_param = base64_decode(this.normal_b64(params.split('=')[1]));
             if (params.indexOf('remarks') > -1) ssr.remarks = base64_decode(this.normal_b64(params.split('=')[1]));
             if (params.indexOf('group') > -1) ssr.group = base64_decode(this.normal_b64(params.split('=')[1]));
             });
-        return `shadowsocks=${ssr['server']}:${ssr['port']}, method=${ssr['method']}, password=${ssr['password']}, ssr-protocol=${ssr['protocol']}, ssr-protocol-param=${ssr['proto_param']}, obfs=${ssr['obfs']}, obfs-host=${ssr['obfs_param']}, fast-open=true, udp-relay=true, tag=${ssr['remarks']}`;
+        return `shadowsocks=${ssr['server']}:${ssr['port']}, method=${ssr['method']}, password=${ssr['password']}, ssr-protocol=${ssr['protocol']}, ssr-protocol-param=${ssr['proto_param']}, obfs=${ssr['obfs']}, obfs-host=${ssr['obfs_param']}, fast-open=${this.settings.tfo}, udp-relay=${this.settings.udp}, tag=${ssr['remarks']}`;
     } catch (err) {
         console.log(err);
         return null;
     }
-  }
+  };
   
   this.genList = function (text) {
     try {
@@ -255,8 +262,8 @@ function shadowsocksr_parser(uri) {
   };
 }
 
-let rp = $resource.content.slice(0, 4) === 'c3Ny' ? new shadowsocksr_parser() : new shadowsocks_parser()
-let content = rp.genList(rp.content)
+let rp = $resource.content.slice(0, 4) === 'c3Ny' ? new shadowsocksr_parser() : new shadowsocks_parser();
+let content = rp.genList(rp.content);
 $done(content);
 
 function base64_decode(data) {
