@@ -195,12 +195,64 @@ function shadowsocks_parser () {
       return {content: content.filter(s => s).join('\n')}
     } catch (err) {
       return {error: err};
-    };
-  }
+    }
+  };
 }
 
-let ssp = new shadowsocks_parser()
-let content = ssp.genList(ssp.content)
+function shadowsocksr_parser(uri) {
+  this.hashtag = $resource.link.split('#')[1];
+  this.content = $resource.content;
+
+  this.normal_b64 = function (str) {
+    return str.replace('-', '+').replace('_', '/');
+  }
+  
+  this.genConf = function (uri) {
+    try {
+        const str = uri.replace('ssr://', '');
+        const str_dec = base64_decode(normal_b64(str));
+        const [ssr_str, params_str] = str_dec.split('/?');
+    
+        const ssr_arr = ssr_str.split(':');
+        const ssr = {
+            server: ssr_arr[0],
+            port: ssr_arr[1],
+            protocol: ssr_arr[2],
+            method: ssr_arr[3],
+            obfs: ssr_arr[4],
+            password: base64_decode(normal_b64(ssr_arr[5]))
+            };
+    
+        const params_arr = params_str.split('&');
+        params_arr.forEach(params => {
+            if (params.indexOf('obfsparam') > -1) ssr.obfs_param = base64_decode(normal_b64(params.split('=')[1]));
+            if (params.indexOf('protoparam') > -1) ssr.proto_param = base64_decode(normal_b64(params.split('=')[1]));
+            if (params.indexOf('remarks') > -1) ssr.remarks = base64_decode(normal_b64(params.split('=')[1]));
+            if (params.indexOf('group') > -1) ssr.group = base64_decode(normal_b64(params.split('=')[1]));
+            });
+        return `shadowsocks={ssr['server']}:{ssr['port']}, method={ssr['method']}, password={ssr['password']}, ssr-protocol={ssr['protocol']}, ssr-protocol-param={ssr['proto_param']}, obfs={ssr['obfs']}, obfs-host={ssr['obfs_param']}, fast-open=true, udp-relay=true, tag={ssr['remarks']}`;
+    } catch (err) {
+        console.log(err);
+        return null;
+    }
+  }
+  
+  this.genList = function (text) {
+    try {
+      if (text.indexOf('ssr://') === -1) text = base64_decode(text);
+      let content = text.split(/\s+/);
+      for(var i = 0, len = content.length; i < len; i++){
+      	content[i] = this.genConf(content[i]);
+			}
+      return {content: content.filter(s => s).join('\n')}
+    } catch (err) {
+      return {error: err};
+    }
+  };
+}
+
+let rp = $resource.content.slice(0, 4) === 'c3Ny' ? new shadowsocksr_parser() : new shadowsocks_parser()
+let content = rp.genList(rp.content)
 $done(content);
 
 function base64_decode(data) {
