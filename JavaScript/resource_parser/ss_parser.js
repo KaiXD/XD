@@ -232,7 +232,7 @@ function shadowsocksr_parser(uri) {
     
         const params_arr = params_str.split('&');
         params_arr.forEach(params => {
-            if (params.indexOf('obfsparam') > -1) ssr.obfs_param = this.settings.obfs_host or base64_decode(this.normal_b64(params.split('=')[1]));
+            if (params.indexOf('obfsparam') > -1) ssr.obfs_param = this.settings.obfs_host || base64_decode(this.normal_b64(params.split('=')[1]));
             if (params.indexOf('protoparam') > -1) ssr.proto_param = base64_decode(this.normal_b64(params.split('=')[1]));
             if (params.indexOf('remarks') > -1) ssr.remarks = base64_decode(this.normal_b64(params.split('=')[1]));
             if (params.indexOf('group') > -1) ssr.group = base64_decode(this.normal_b64(params.split('=')[1]));
