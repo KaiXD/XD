@@ -90,7 +90,7 @@ function shadowsocks_parser () {
       return null;
     }
 
-    if (this.re.filter && !this.re.filterRe.test(node.tag)) {
+    if (this.settings.filter && !this.settings.filter.test(node.tag)) {
       console.log(`Node ${node.tag} is abandoned by user-defined filter.\n`);
       return null;
     }
@@ -216,27 +216,32 @@ function shadowsocksr_parser(uri) {
   
   this.genConf = function (uri) {
     try {
-        const str = uri.replace('ssr://', '');
-        const str_dec = base64_decode(this.normal_b64(str));
-        const [ssr_str, params_str] = str_dec.split('/?');
+      const str = uri.replace('ssr://', '');
+      const str_dec = base64_decode(this.normal_b64(str));
+      const [ssr_str, params_str] = str_dec.split('/?');
+      
+      const ssr_arr = ssr_str.split(':');
+      const ssr = {
+        server: ssr_arr[0],
+        port: ssr_arr[1],
+        protocol: ssr_arr[2],
+        method: ssr_arr[3],
+        obfs: ssr_arr[4],
+        password: base64_decode(this.normal_b64(ssr_arr[5]))
+        };
     
-        const ssr_arr = ssr_str.split(':');
-        const ssr = {
-            server: ssr_arr[0],
-            port: ssr_arr[1],
-            protocol: ssr_arr[2],
-            method: ssr_arr[3],
-            obfs: ssr_arr[4],
-            password: base64_decode(this.normal_b64(ssr_arr[5]))
-            };
-    
-        const params_arr = params_str.split('&');
-        params_arr.forEach(params => {
-            if (params.indexOf('obfsparam') > -1) ssr.obfs_param = this.settings.obfs_host || base64_decode(this.normal_b64(params.split('=')[1]));
-            if (params.indexOf('protoparam') > -1) ssr.proto_param = base64_decode(this.normal_b64(params.split('=')[1]));
-            if (params.indexOf('remarks') > -1) ssr.remarks = base64_decode(this.normal_b64(params.split('=')[1]));
-            if (params.indexOf('group') > -1) ssr.group = base64_decode(this.normal_b64(params.split('=')[1]));
-            });
+      const params_arr = params_str.split('&');
+      params_arr.forEach(params => {
+        if (params.indexOf('obfsparam') > -1) ssr.obfs_param = this.settings.obfs_host || base64_decode(this.normal_b64(params.split('=')[1]));
+        if (params.indexOf('protoparam') > -1) ssr.proto_param = base64_decode(this.normal_b64(params.split('=')[1]));
+        if (params.indexOf('remarks') > -1) ssr.remarks = base64_decode(this.normal_b64(params.split('=')[1]));
+        if (params.indexOf('group') > -1) ssr.group = base64_decode(this.normal_b64(params.split('=')[1]));
+      });
+      
+      if (this.settings.filter && !this.settings.filter.test(ssr.remarks)) {
+        console.log(`Node ${ssr.remarks} is abandoned by user-defined filter.\n`);
+        return null;
+      }
         return `shadowsocks=${ssr['server']}:${ssr['port']}, method=${ssr['method']}, password=${ssr['password']}, ssr-protocol=${ssr['protocol']}, ssr-protocol-param=${ssr['proto_param']}, obfs=${ssr['obfs']}, obfs-host=${ssr['obfs_param']}, fast-open=${this.settings.tfo}, udp-relay=${this.settings.udp}, tag=${ssr['remarks']}`;
     } catch (err) {
         console.log(err);
