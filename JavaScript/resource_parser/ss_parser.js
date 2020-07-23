@@ -221,6 +221,9 @@ function shadowsocksr_parser(uri) {
       const [ssr_str, params_str] = str_dec.split('/?');
       
       const ssr_arr = ssr_str.split(':');
+      if (ssr_arr.length > 6) {
+        return null;
+      }
       const ssr = {
         server: ssr_arr[0],
         port: ssr_arr[1],
