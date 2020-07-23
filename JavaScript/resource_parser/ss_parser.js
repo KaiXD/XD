@@ -272,54 +272,71 @@ let content = rp.genList(rp.content);
 $done(content);
 
 function base64_decode(data) {
-    function decode_utf8_string(str) {
-        return decodeURIComponent(str.split('').map(function (c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-    }
+    var b64chars
+        = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+    var b64tab = function (bin) {
+        var t = {};
+        for (var i = 0, l = bin.length; i < l; i++) t[bin.charAt(i)] = i;
+        return t;
+    }(b64chars);
+    var fromCharCode = String.fromCharCode;
 
-    let b64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-    let o1;
-    let o2;
-    let o3;
-    let h1;
-    let h2;
-    let h3;
-    let h4;
-    let bits;
-    let i = 0;
-    let ac = 0;
-    let dec = '';
-    let tmp = [];
-
-    if (!data) {
-        return data;
-    }
-
-    data += '';
-
-    do {
-        h1 = b64.indexOf(data.charAt(i++));
-        h2 = b64.indexOf(data.charAt(i++));
-        h3 = b64.indexOf(data.charAt(i++));
-        h4 = b64.indexOf(data.charAt(i++));
-
-        bits = h1 << 18 | h2 << 12 | h3 << 6 | h4;
-
-        o1 = bits >> 16 & 0xff;
-        o2 = bits >> 8 & 0xff;
-        o3 = bits & 0xff;
-
-        if (h3 === 64) {
-            tmp[ac++] = String.fromCharCode(o1);
-        } else if (h4 === 64) {
-            tmp[ac++] = String.fromCharCode(o1, o2);
-        } else {
-            tmp[ac++] = String.fromCharCode(o1, o2, o3);
+    var re_btou = /[\xC0-\xDF][\x80-\xBF]|[\xE0-\xEF][\x80-\xBF]{2}|[\xF0-\xF7][\x80-\xBF]{3}/g;
+    var cb_btou = function (cccc) {
+        switch (cccc.length) {
+            case 4:
+                var cp = ((0x07 & cccc.charCodeAt(0)) << 18)
+                    | ((0x3f & cccc.charCodeAt(1)) << 12)
+                    | ((0x3f & cccc.charCodeAt(2)) << 6)
+                    | (0x3f & cccc.charCodeAt(3)),
+                    offset = cp - 0x10000;
+                return (fromCharCode((offset >>> 10) + 0xD800)
+                    + fromCharCode((offset & 0x3FF) + 0xDC00));
+            case 3:
+                return fromCharCode(
+                    ((0x0f & cccc.charCodeAt(0)) << 12)
+                    | ((0x3f & cccc.charCodeAt(1)) << 6)
+                    | (0x3f & cccc.charCodeAt(2))
+                );
+            default:
+                return fromCharCode(
+                    ((0x1f & cccc.charCodeAt(0)) << 6)
+                    | (0x3f & cccc.charCodeAt(1))
+                );
         }
-    } while (i < data.length);
-    
-    dec = tmp.join('');
-
-    return decode_utf8_string(dec.replace(/\0+$/, ''));
+    };
+    var btou = function (b) {
+        return b.replace(re_btou, cb_btou);
+    };
+    var cb_decode = function (cccc) {
+        var len = cccc.length,
+            padlen = len % 4,
+            n = (len > 0 ? b64tab[cccc.charAt(0)] << 18 : 0)
+                | (len > 1 ? b64tab[cccc.charAt(1)] << 12 : 0)
+                | (len > 2 ? b64tab[cccc.charAt(2)] << 6 : 0)
+                | (len > 3 ? b64tab[cccc.charAt(3)] : 0),
+            chars = [
+                fromCharCode(n >>> 16),
+                fromCharCode((n >>> 8) & 0xff),
+                fromCharCode(n & 0xff)
+            ];
+        chars.length -= [0, 0, 2, 1][padlen];
+        return chars.join('');
+    };
+    var _atob = function (a) {
+        return a.replace(/\S{1,4}/g, cb_decode);
+    };
+    var atob = function (a) {
+        return _atob(String(a).replace(/[^A-Za-z0-9\+\/]/g, ''));
+    };
+    var _decode = function (u) {
+        return btou(_atob(u))
+    }
+    var decode = function (a) {
+        return _decode(
+            String(a).replace(/[-_]/g, function (m0) { return m0 == '-' ? '+' : '/' })
+                .replace(/[^A-Za-z0-9\+\/]/g, '')
+        ).replace(/&gt;/g, ">").replace(/&lt;/g, "<");
+    };
+    return decode(data)
 };
